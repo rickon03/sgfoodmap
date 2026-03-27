@@ -5,181 +5,114 @@ const BANNERS = [
   "🔥 拉新激励即将上线！邀请好友拼桌赚佣金 💰",
 ];
 
-/** 抬起时判定为「轻点」的最大位移（移动端手指抖动更大，略放宽） */
-const TAP_MAX_DIST_PX = 32;
-const TAP_MAX_MS = 750;
+/** 判定为「横滑切下一条」的最小水平位移（px） */
+const SWIPE_X_PX = 48;
+/** 判定为「轻点打开登录」的最大总位移（px） */
+const TAP_MAX_DIST_PX = 28;
+const TAP_MAX_MS = 800;
 
 type PromoBannerProps = {
-  /** 用户轻点横条（非大幅滑动切换）时回调，由父级决定打开登录或提示已登录 */
   onBannerTap: () => void;
 };
 
-/** 用原生横向滚动 + scroll-snap；轻点横条触发 onBannerTap */
+/**
+ * 非 overflow 横向滚动：避免 touch-action: pan-x 与滚动容器吞掉轻点。
+ * 叠层轮播 + 手势：小幅位移视为轻点（登录），明显横滑仅切换文案。
+ */
 export function PromoBanner({ onBannerTap }: PromoBannerProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const scrollerRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number>(0);
 
-  /** 仅在 pointerdown 时记录起点，不在 pointermove 里取消（避免移动端抖动误杀） */
-  const gestureStartRef = useRef<{
-    x: number;
-    y: number;
-    t: number;
-  } | null>(null);
-
-  /** 避免 pointerup + click 连续触发两次 */
-  const tapHandledRef = useRef(false);
+  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const lastTapAtRef = useRef(0);
-
-  const fireBannerTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapAtRef.current < 450) return;
-    lastTapAtRef.current = now;
-    onBannerTap();
-  }, [onBannerTap]);
-
-  const tryFinishTap = useCallback(
-    (clientX: number, clientY: number) => {
-      const s = gestureStartRef.current;
-      gestureStartRef.current = null;
-      if (!s || s.t === 0) return;
-      const dt = Date.now() - s.t;
-      if (dt > TAP_MAX_MS) return;
-      const dist = Math.hypot(clientX - s.x, clientY - s.y);
-      if (dist > TAP_MAX_DIST_PX) return;
-      tapHandledRef.current = true;
-      window.setTimeout(() => {
-        tapHandledRef.current = false;
-      }, 400);
-      fireBannerTap();
-    },
-    [fireBannerTap]
-  );
-
-  const syncIndexFromScroll = useCallback(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const w = el.clientWidth;
-    if (w <= 0) return;
-    const i = Math.round(el.scrollLeft / w);
-    const clamped = Math.min(Math.max(0, i), BANNERS.length - 1);
-    setIndex((prev) => (prev === clamped ? prev : clamped));
-  }, []);
-
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const onScroll = () => syncIndexFromScroll();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [syncIndexFromScroll]);
-
-  useEffect(() => {
-    if (paused) return;
-    const timer = window.setInterval(() => {
-      const el = scrollerRef.current;
-      if (!el) return;
-      const w = el.clientWidth;
-      if (w <= 0) return;
-      const next = (Math.round(el.scrollLeft / w) + 1) % BANNERS.length;
-      el.scrollTo({ left: next * w, behavior: "smooth" });
-    }, 4000);
-    return () => window.clearInterval(timer);
-  }, [paused]);
 
   const scheduleResume = useCallback(() => {
     window.clearTimeout(resumeTimerRef.current);
     setPaused(true);
-    resumeTimerRef.current = window.setTimeout(() => {
-      setPaused(false);
-    }, 6000);
+    resumeTimerRef.current = window.setTimeout(() => setPaused(false), 6000);
   }, []);
 
   useEffect(() => {
     return () => window.clearTimeout(resumeTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    if (paused) return;
+    const timer = window.setInterval(() => {
+      setIndex((prev) => (prev + 1) % BANNERS.length);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [paused]);
+
+  const goPrev = useCallback(() => {
+    setIndex((prev) => (prev - 1 + BANNERS.length) % BANNERS.length);
+  }, []);
+
+  const goNext = useCallback(() => {
+    setIndex((prev) => (prev + 1) % BANNERS.length);
+  }, []);
+
   const goTo = useCallback(
     (i: number) => {
-      const el = scrollerRef.current;
-      if (!el) return;
-      const w = el.clientWidth;
-      if (w <= 0) return;
       scheduleResume();
-      el.scrollTo({ left: i * w, behavior: "smooth" });
+      setIndex(i);
     },
     [scheduleResume]
   );
 
-  const onScrollerPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const fireLogin = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapAtRef.current < 400) return;
+    lastTapAtRef.current = now;
+    onBannerTap();
+  }, [onBannerTap]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     scheduleResume();
-    gestureStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      t: Date.now(),
-    };
+    startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
 
-  const onScrollerPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    // 触摸由下方原生 touchend 处理，避免与 Pointer 重复触发登录
-    if (e.pointerType === "touch") return;
+  const finishGesture = (clientX: number, clientY: number) => {
+    const s = startRef.current;
+    startRef.current = null;
+    if (!s) return;
+    const dt = Date.now() - s.t;
+    const dx = clientX - s.x;
+    const dy = clientY - s.y;
+
+    if (dt > TAP_MAX_MS) return;
+
+    if (Math.abs(dx) >= SWIPE_X_PX && Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) goPrev();
+      else goNext();
+      return;
+    }
+
+    if (Math.hypot(dx, dy) <= TAP_MAX_DIST_PX) {
+      fireLogin();
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    tryFinishTap(e.clientX, e.clientY);
+    finishGesture(e.clientX, e.clientY);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
 
-  const onScrollerPointerCancel = () => {
-    gestureStartRef.current = null;
+  const onPointerCancel = () => {
+    startRef.current = null;
   };
-
-  /** 部分移动端对可滚动区域只派发 click，用其兜底（与 pointer 去重） */
-  const onScrollerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("button")) return;
-    if (tapHandledRef.current) return;
-    fireBannerTap();
-  };
-
-  /** 移动端对 overflow 横向滚动区常不派发完整 Pointer 链，用 touchstart/touchend 判定轻点 */
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    let start: { x: number; y: number; t: number } | null = null;
-
-    const onTouchStart = (ev: TouchEvent) => {
-      const t = ev.touches[0];
-      if (!t) return;
-      scheduleResume();
-      start = { x: t.clientX, y: t.clientY, t: Date.now() };
-    };
-
-    const onTouchEnd = (ev: TouchEvent) => {
-      const t = ev.changedTouches[0];
-      if (!t || !start) return;
-      const dt = Date.now() - start.t;
-      const dist = Math.hypot(t.clientX - start.x, t.clientY - start.y);
-      start = null;
-      if (dt > TAP_MAX_MS || dist > TAP_MAX_DIST_PX) return;
-      tapHandledRef.current = true;
-      window.setTimeout(() => {
-        tapHandledRef.current = false;
-      }, 400);
-      fireBannerTap();
-    };
-
-    const onTouchCancel = () => {
-      start = null;
-    };
-
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
-    el.addEventListener("touchcancel", onTouchCancel, { passive: true });
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchCancel);
-    };
-  }, [fireBannerTap, scheduleResume]);
 
   return (
     <section
@@ -188,28 +121,35 @@ export function PromoBanner({ onBannerTap }: PromoBannerProps) {
     >
       <div className="mx-auto w-full">
         <div className="relative overflow-hidden rounded-xl">
+          {/* 无 overflow-x scroll、无 pan-x，移动端轻点可稳定触发 */}
           <div
-            ref={scrollerRef}
-            className="hide-scrollbar scroll-x-touch flex h-12 cursor-pointer snap-x snap-mandatory overflow-x-auto overflow-y-hidden md:h-14"
-            style={{ WebkitOverflowScrolling: "touch" }}
-            onPointerDown={onScrollerPointerDown}
-            onPointerUp={onScrollerPointerUp}
-            onPointerCancel={onScrollerPointerCancel}
-            onClick={onScrollerClick}
+            className="relative h-12 cursor-pointer touch-manipulation md:h-14"
+            style={{ touchAction: "manipulation" }}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
             onPointerEnter={() => setPaused(true)}
             onPointerLeave={() => setPaused(false)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fireLogin();
+              }
+            }}
+            aria-label="查看优惠，点击进入登录"
           >
-            {BANNERS.map((text) => (
-              <div
+            {BANNERS.map((text, i) => (
+              <p
                 key={text}
-                className="flex h-12 w-full min-w-full shrink-0 snap-center snap-always items-center bg-gradient-to-r from-[#FFC300] to-[#FF9900] px-3 md:h-14 md:px-5"
-                role="group"
-                aria-roledescription="slide"
+                className={`pointer-events-none absolute inset-0 flex select-none items-center bg-gradient-to-r from-[#FFC300] to-[#FF9900] px-3 text-sm font-black text-gray-900 transition-opacity duration-500 md:px-5 md:text-base ${
+                  i === index ? "opacity-100" : "opacity-0"
+                }`}
+                aria-hidden={i !== index}
               >
-                <p className="w-full select-none text-sm font-black text-gray-900 md:text-base">
-                  <span className="block w-full truncate">{text}</span>
-                </p>
-              </div>
+                <span className="block w-full truncate">{text}</span>
+              </p>
             ))}
           </div>
 
