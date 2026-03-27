@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { mapAuthErrorToZh } from "../lib/authErrors";
 import { checkEmailAvailable } from "../lib/checkEmailAvailable";
 import { checkUsernameAvailable } from "../lib/checkUsernameAvailable";
+import { precheckSignupRegistration } from "../lib/precheckSignupRegistration";
 import { resolveLoginIdentifierToEmail } from "../lib/resolveLoginEmail";
 import { supabase } from "../lib/supabaseClient";
 
@@ -83,6 +84,9 @@ export function LoginModal({
     setLoading(false);
   }, [open, mode]);
 
+  /** 防止连点触发两次 signUp，触发 Supabase 频率限制 */
+  const signupInFlightRef = useRef(false);
+
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
@@ -142,6 +146,8 @@ export function LoginModal({
   }, [loginIdentifier, loginPassword, onClose, onLoggedIn]);
 
   const handleSignUp = useCallback(async () => {
+    if (signupInFlightRef.current) return;
+    signupInFlightRef.current = true;
     try {
       setLoading(true);
       setError(null);
@@ -153,28 +159,43 @@ export function LoginModal({
         return;
       }
 
-      const emailCheck = await checkEmailAvailable(email);
-      if (emailCheck.ok && !emailCheck.available) {
-        setError(null);
-        setEmailRegisteredForLogin(email);
-        setEmailRegisteredAlertOpen(true);
-        return;
-      }
-      if (!emailCheck.ok && emailCheck.kind === "rpc_unavailable") {
-        // 未执行 supabase_is_email_available.sql 时，交给 signUp 报错区分
+      const merged = await precheckSignupRegistration(email, nick);
+      if (merged.ok) {
+        if (!merged.emailAvailable) {
+          setError(null);
+          setEmailRegisteredForLogin(email);
+          setEmailRegisteredAlertOpen(true);
+          return;
+        }
+        if (!merged.usernameAvailable) {
+          setError("昵称已注册，请更换昵称。");
+          return;
+        }
+      } else {
+        const emailCheck = await checkEmailAvailable(email);
+        if (emailCheck.ok && !emailCheck.available) {
+          setError(null);
+          setEmailRegisteredForLogin(email);
+          setEmailRegisteredAlertOpen(true);
+          return;
+        }
+        if (!emailCheck.ok && emailCheck.kind === "rpc_unavailable") {
+          // 未执行 supabase_is_email_available.sql 时，交给 signUp 报错区分
+        }
+
+        const nameCheck = await checkUsernameAvailable(nick);
+        if (nameCheck.ok && !nameCheck.available) {
+          setError("昵称已注册，请更换昵称。");
+          return;
+        }
+        if (!nameCheck.ok && nameCheck.kind === "rpc_unavailable") {
+          setError(
+            "无法校验昵称是否占用：请先在 Supabase 执行 supabase_profiles_username_unique.sql，或稍后再试。"
+          );
+          return;
+        }
       }
 
-      const nameCheck = await checkUsernameAvailable(nick);
-      if (nameCheck.ok && !nameCheck.available) {
-        setError("昵称已注册，请更换昵称。");
-        return;
-      }
-      if (!nameCheck.ok && nameCheck.kind === "rpc_unavailable") {
-        setError(
-          "无法校验昵称是否占用：请先在 Supabase 执行 supabase_profiles_username_unique.sql，或稍后再试。"
-        );
-        return;
-      }
       const { data: signData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: signPassword,
@@ -205,6 +226,7 @@ export function LoginModal({
         setError(msg);
       }
     } finally {
+      signupInFlightRef.current = false;
       setLoading(false);
     }
   }, [nickname, showToast, signEmail, signPassword]);

@@ -49,8 +49,14 @@ export function mapAuthErrorToZh(error: unknown): string {
     if (code === "weak_password") {
       return "密码强度不足，请换更长或更复杂的密码。";
     }
-    if (code === "over_email_send_rate_limit" || code === "too_many_requests") {
-      return "操作过于频繁，请稍后再试。";
+    // GoTrue：发信 / 全局限流（含 over_request_rate_limit）
+    if (
+      code === "over_email_send_rate_limit" ||
+      code === "over_request_rate_limit" ||
+      code === "over_sms_send_rate_limit" ||
+      code === "too_many_requests"
+    ) {
+      return "操作过于频繁，请稍后再试。若首次注册仍出现，请确认未连续点击「立即注册」，或稍等几分钟后重试。";
     }
   }
 
@@ -96,7 +102,7 @@ export function mapAuthErrorToZh(error: unknown): string {
   }
 
   if (lower.includes("rate limit") || lower.includes("too many requests")) {
-    return "操作过于频繁，请稍后再试。";
+    return "操作过于频繁，请稍后再试。若首次注册仍出现，请确认未连续点击「立即注册」，或稍等几分钟后重试。";
   }
 
   // 其它错误给出可读原文（多为英文），避免只显示「操作失败」
