@@ -368,7 +368,17 @@ export default function App() {
 
       <main className="w-full bg-[#F4F4F5]">
         <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
-          <PromoBanner />
+          <PromoBanner
+            onBannerTap={() => {
+              if (!isLoggedIn) {
+                setLoginIntro(null);
+                setLoginOpen(true);
+              } else {
+                setAppToast("您已登录，点击其他功能看看吧");
+                window.setTimeout(() => setAppToast(null), 8000);
+              }
+            }}
+          />
           <div className="space-y-3">
             <CoreActionCards
               randomLoading={randomLoading}
