@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+/* 美团主 CTA：黄底黑字 */
+@layer utilities {
+  .btn-meituan {
+    @apply bg-meituan font-semibold text-gray-900 shadow-md transition hover:bg-meituan-hover active:scale-[0.98] disabled:opacity-60;
+  }
+  .pill-meituan-active {
+    @apply bg-meituan font-semibold text-gray-900 shadow-md shadow-black/10;
+  }
+  .focus-meituan {
+    @apply focus:border-meituan focus:outline-none focus:ring-2 focus:ring-meituan/40;
+  }
+  /* 横向滚动区：移动端拖动与惯性滚动，减少与纵向页面抢手势 */
+  .scroll-x-touch {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+  }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 0.8s linear infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.35s ease-out forwards;
+}
+
+/* 主详情弹窗：打开动画 */
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-panel-in-mobile {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modal-panel-in-desktop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-main-backdrop {
+  animation: modal-backdrop-in 0.22s ease-out both;
+}
+
+.modal-main-panel {
+  animation: modal-panel-in-mobile 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .modal-main-panel {
+    animation: modal-panel-in-desktop 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* 写评价子弹窗 */
+.modal-nested-backdrop {
+  animation: modal-backdrop-in 0.2s ease-out both;
+}
+
+.modal-nested-panel {
+  animation: modal-panel-in-mobile 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .modal-nested-panel {
+    animation: modal-panel-in-desktop 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Tabs 内容切换 */
+@keyframes tab-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-panel-animate {
+  animation: tab-panel-in 0.22s ease-out both;
+}
+
+/* 仅淡入，勿在 keyframes 里写 transform，否则会覆盖图钉气泡的 translate 定位 */
+@keyframes map-mini-pop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.map-mini-pop {
+  animation: map-mini-pop 0.2s ease-out both;
+}
+
+/* 拼好桌弹层 */
+.group-dining-overlay {
+  animation: modal-backdrop-in 0.22s ease-out both;
+}
+
+.group-dining-sheet {
+  animation: profile-sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .group-dining-sheet {
+    animation: modal-panel-in-desktop 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* 优惠券卡片微交互 */
+.coupon-card {
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.coupon-card:hover {
+  box-shadow: 0 10px 28px -10px rgb(255 195 0 / 0.35);
+}
+
+/* 弹窗关闭：淡出 + 轻微下沉/缩小 */
+@keyframes modal-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-panel-out-mobile {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+
+@keyframes modal-panel-out-desktop {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.modal-main-backdrop.is-closing {
+  animation: modal-backdrop-out 0.22s ease-in forwards;
+  pointer-events: none;
+}
+
+.modal-main-panel.is-closing {
+  animation: modal-panel-out-mobile 0.26s ease-in forwards;
+}
+
+@media (min-width: 640px) {
+  .modal-main-panel.is-closing {
+    animation: modal-panel-out-desktop 0.24s ease-in forwards;
+  }
+}
+
+.modal-nested-backdrop.is-closing {
+  animation: modal-backdrop-out 0.2s ease-in forwards;
+  pointer-events: none;
+}
+
+.modal-nested-panel.is-closing {
+  animation: modal-panel-out-mobile 0.24s ease-in forwards;
+}
+
+@media (min-width: 640px) {
+  .modal-nested-panel.is-closing {
+    animation: modal-panel-out-desktop 0.22s ease-in forwards;
+  }
+}
+
+/* 登录弹窗 */
+.login-modal-backdrop {
+  animation: modal-backdrop-in 0.22s ease-out both;
+}
+
+.login-modal-panel {
+  animation: modal-panel-in-mobile 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .login-modal-panel {
+    animation: modal-panel-in-desktop 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* 个人中心抽屉 */
+.profile-drawer-backdrop {
+  animation: modal-backdrop-in 0.2s ease-out both;
+}
+
+@keyframes profile-sheet-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.96;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes profile-drawer-right-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.96;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.profile-drawer-panel {
+  animation: profile-sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 768px) {
+  .profile-drawer-panel {
+    animation: modal-panel-in-desktop 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
