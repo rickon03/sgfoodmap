@@ -135,7 +135,8 @@ export default function App() {
     if (!el) return;
     const update = () => {
       const h = el.getBoundingClientRect().height;
-      setStickyHeaderHeightPx(Math.round(h));
+      // 向上取整，减少与吸顶搜索条之间的 1px 灰缝（移动端亚像素）
+      setStickyHeaderHeightPx(Math.ceil(h));
     };
     update();
     const ro = new ResizeObserver(update);
@@ -402,13 +403,13 @@ export default function App() {
         {/* 吸顶：外层浅灰；仅「搜索区」黄底 + 非对称过渡；「筛选区」永为浅灰；上下无 gap */}
         <div
           ref={searchStickyWrapRef}
-          className="sticky z-40 mt-[calc(0.75rem-1px)] w-full bg-[#F4F4F5]"
+          className="sticky z-40 mt-3 w-full bg-[#F4F4F5]"
           style={{ top: stickyHeaderHeightPx }}
         >
           <div
             className={
               isSearchSticky
-                ? "bg-[#FFC300] pb-[1px] transition-colors duration-200 ease-in motion-reduce:transition-none"
+                ? "bg-[#FFC300] transition-colors duration-200 ease-in motion-reduce:transition-none"
                 : "bg-[#F4F4F5] transition-none duration-0"
             }
           >

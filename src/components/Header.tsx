@@ -89,14 +89,15 @@ export function Header({
         </div>
       </div>
 
+      {/* 与顶栏同色，避免与下方黄条之间露出灰底形成「透明细线」 */}
       <div
-        className="shrink-0"
+        className="shrink-0 bg-[#FFC300]"
         style={{ height: barHeightPx }}
         aria-hidden
       />
 
-      {/* 与改版前整段 Header 一致：美团黄底 */}
-      <div className="border-b border-black/10 bg-meituan">
+      {/* 与改版前整段 Header 一致：美团黄底（无底边线，避免与下方内容之间出现细缝/透明感） */}
+      <div className="bg-meituan">
         <div className="mx-auto w-full max-w-7xl px-4 pb-2 pt-2 md:px-6 md:pb-2.5 md:pt-2 lg:px-8">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <p className="text-xs font-medium text-gray-800/80 sm:text-sm">
