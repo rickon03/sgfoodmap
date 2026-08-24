@@ -6,7 +6,7 @@ const BANNERS = [
 ];
 
 /** 判定为「横滑切下一条」的最小水平位移（px） */
-const SWIPE_X_PX = 48;
+const SWIPE_X_PX = 36;
 /** 判定为「轻点打开登录」的最大总位移（px） */
 const TAP_MAX_DIST_PX = 28;
 const TAP_MAX_MS = 800;
@@ -16,7 +16,7 @@ type PromoBannerProps = {
 };
 
 /**
- * 非 overflow 横向滚动：避免 touch-action: pan-x 与滚动容器吞掉轻点。
+ * 非 overflow 横向滚动：页面仍可纵向滚动，Banner 自己接管横向手势。
  * 叠层轮播 + 手势：小幅位移视为轻点（登录），明显横滑仅切换文案。
  */
 export function PromoBanner({ onBannerTap }: PromoBannerProps) {
@@ -87,15 +87,13 @@ export function PromoBanner({ onBannerTap }: PromoBannerProps) {
     const dx = clientX - s.x;
     const dy = clientY - s.y;
 
-    if (dt > TAP_MAX_MS) return;
-
     if (Math.abs(dx) >= SWIPE_X_PX && Math.abs(dx) > Math.abs(dy)) {
       if (dx > 0) goPrev();
       else goNext();
       return;
     }
 
-    if (Math.hypot(dx, dy) <= TAP_MAX_DIST_PX) {
+    if (dt <= TAP_MAX_MS && Math.hypot(dx, dy) <= TAP_MAX_DIST_PX) {
       fireLogin();
     }
   };
@@ -121,10 +119,10 @@ export function PromoBanner({ onBannerTap }: PromoBannerProps) {
     >
       <div className="mx-auto w-full">
         <div className="relative overflow-hidden rounded-xl">
-          {/* 无 overflow-x scroll、无 pan-x，移动端轻点可稳定触发 */}
+          {/* pan-y 交给页面滚动；横向手势保留给 Banner，避免手机浏览器提前取消 pointer 事件 */}
           <div
-            className="relative h-12 cursor-pointer touch-manipulation md:h-14"
-            style={{ touchAction: "manipulation" }}
+            className="relative h-12 cursor-pointer md:h-14"
+            style={{ touchAction: "pan-y pinch-zoom" }}
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
@@ -153,7 +151,7 @@ export function PromoBanner({ onBannerTap }: PromoBannerProps) {
             ))}
           </div>
 
-          <div className="pointer-events-none absolute bottom-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5">
+          <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 items-center">
             {BANNERS.map((_, i) => (
               <button
                 key={`dot-${i}`}
@@ -165,10 +163,14 @@ export function PromoBanner({ onBannerTap }: PromoBannerProps) {
                   e.stopPropagation();
                   goTo(i);
                 }}
-                className={`pointer-events-auto h-1.5 w-1.5 rounded-full transition-all ${
-                  i === index ? "w-4 bg-gray-900" : "bg-gray-900/40"
-                }`}
-              />
+                className="relative h-6 w-6 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/60"
+              >
+                <span
+                  className={`pointer-events-none absolute bottom-1.5 left-1/2 block h-1.5 -translate-x-1/2 rounded-full transition-all ${
+                    i === index ? "w-4 bg-gray-900" : "w-1.5 bg-gray-900/40"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </div>
