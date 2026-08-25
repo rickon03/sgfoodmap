@@ -107,26 +107,67 @@ export function priceFilterButtonLabel(sel: PriceFilterSelection): string {
 }
 
 function normalize(raw: string): string {
-  return raw.trim().toLowerCase();
+  return raw.normalize("NFKC").trim().toLowerCase();
+}
+
+/**
+ * 无空格中文的保守模糊匹配：字符顺序不变，且相邻字符间最多允许插入 2 个字。
+ * 仅用于店名和招牌菜，避免从多个无关字段拼出误匹配。
+ */
+function matchesShortGapHanKeyword(field: string, keyword: string): boolean {
+  if (!/^[\u3400-\u9fff]{2,}$/.test(keyword)) return false;
+
+  const fieldChars = [...normalize(field)];
+  const keywordChars = [...keyword];
+  let positions: number[] = [];
+
+  fieldChars.forEach((char, index) => {
+    if (char === keywordChars[0]) positions.push(index);
+  });
+
+  for (const char of keywordChars.slice(1)) {
+    const nextPositions = new Set<number>();
+    for (const position of positions) {
+      const end = Math.min(fieldChars.length - 1, position + 3);
+      for (let next = position + 1; next <= end; next += 1) {
+        if (fieldChars[next] === char) nextPositions.add(next);
+      }
+    }
+    positions = [...nextPositions];
+    if (positions.length === 0) return false;
+  }
+
+  return positions.length > 0;
 }
 
 export function restaurantMatchesSearch(r: RestaurantRow, raw: string): boolean {
-  const q = normalize(raw);
-  if (!q) return true;
+  const keywords = [
+    ...new Set(normalize(raw).split(/[\s,，、;；/|]+/).filter(Boolean)),
+  ];
+  if (keywords.length === 0) return true;
 
-  const hay = [
-    r.name,
-    r.university,
-    r.sub_location,
-    r.category,
-    r.signature_dishes,
-    JSON.stringify(r.coupons ?? []),
-    ...(r.tags ?? []),
-  ]
-    .join(" ")
-    .toLowerCase();
+  const hay = normalize(
+    [
+      r.name,
+      r.university,
+      r.sub_location,
+      r.category,
+      r.signature_dishes,
+      ...(r.tags ?? []),
+      ...normalizeCoupons(r.coupons).flatMap((coupon) => [
+        coupon.title,
+        coupon.desc,
+      ]),
+    ].join(" ")
+  );
 
-  return hay.includes(q);
+  return keywords.every(
+    (keyword) =>
+      hay.includes(keyword) ||
+      [r.name, r.signature_dishes].some((field) =>
+        matchesShortGapHanKeyword(field, keyword)
+      )
+  );
 }
 
 export function rowToRestaurantUI(row: RestaurantRow): Restaurant {
