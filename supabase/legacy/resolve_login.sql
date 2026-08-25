@@ -1,5 +1,6 @@
--- 已合并到 supabase_profiles_username_unique.sql（含昵称全站唯一、本函数最新版）。
--- 若你只需旧版「仅按 user_metadata 解析昵称」，可保留下方；新项目请执行 supabase_profiles_username_unique.sql。
+-- supabase/legacy/resolve_login.sql
+-- 已合并到 ../02_profiles_username_unique.sql（含昵称全站唯一、本函数最新版）。
+-- 仅供旧环境兼容；新项目请执行 ../02_profiles_username_unique.sql。
 
 create or replace function public.resolve_login_email(identifier text)
 returns text

@@ -1,3 +1,4 @@
+-- supabase/05_team_members.sql
 -- 拼桌成员表 + 加入/退出 RPC（避免重复加入、人数一致）
 -- Supabase → SQL Editor 执行
 -- 若已有 public.teams 表，下面建表语句不会覆盖原表。

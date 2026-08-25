@@ -116,7 +116,7 @@ export function ProfileDrawer({
       const msg = formatSupabaseError(e);
       showToast(
         msg.includes("team_members") || msg.includes("Could not find")
-          ? "请先在 Supabase 执行 supabase_team_members.sql"
+          ? "请先在 Supabase 执行 supabase/05_team_members.sql"
           : `加载失败：${msg}`
       );
       setMyTeams([]);

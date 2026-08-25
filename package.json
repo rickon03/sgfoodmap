@@ -1,10 +1,12 @@
 {
-  "name": "university-food-map",
+  "name": "sgfoodmap",
+  "description": "面向新加坡高校学生的校园美食发现 Demo",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

@@ -1,5 +1,6 @@
+-- supabase/02_profiles_username_unique.sql
 -- 校园昵称全站唯一：profiles 表 + 注册触发器 + 查重 RPC + 更新 resolve_login_email
--- 在 Supabase：Dashboard → SQL → 执行（若已执行过旧版 supabase_resolve_login.sql，可整段重新执行，函数为 create or replace）
+-- 在 Supabase：Dashboard → SQL → 执行（若已执行过 legacy/resolve_login.sql，可整段重新执行，函数为 create or replace）
 
 -- ========== 1) 资料表：一人一行，昵称唯一（不区分大小写、首尾空格） ==========
 create table if not exists public.profiles (

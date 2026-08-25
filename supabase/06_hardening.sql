@@ -1,3 +1,4 @@
+-- supabase/06_hardening.sql
 -- Supabase 安全加固（可选，但推荐）
 -- 执行前请确认你已完成基础建表与初始化数据
 

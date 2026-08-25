@@ -1,3 +1,4 @@
+-- supabase/03_is_email_available.sql
 -- 注册前：邮箱是否尚未被占用（一个邮箱只能注册一个账号）
 -- 在 Supabase → SQL Editor 执行（可与其它 SQL 分开执行）
 

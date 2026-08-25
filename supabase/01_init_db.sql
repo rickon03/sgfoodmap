@@ -1,4 +1,4 @@
--- init_db.sql
+-- supabase/01_init_db.sql
 -- Supabase (PostgreSQL) 初始化：restaurants + reviews + 16 条餐厅初始数据
 
 -- UUID 生成函数

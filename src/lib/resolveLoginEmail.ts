@@ -5,7 +5,7 @@ export type ResolveLoginResult =
   | { ok: false; kind: "not_found" | "rpc_unavailable" };
 
 /**
- * 登录框输入：含 @ 则视为邮箱；否则按校园昵称在库中解析为邮箱（需已执行 supabase_resolve_login.sql）。
+ * 登录框输入：含 @ 则视为邮箱；否则按校园昵称在库中解析为邮箱（需已执行 supabase/02_profiles_username_unique.sql）。
  */
 export async function resolveLoginIdentifierToEmail(identifier: string): Promise<ResolveLoginResult> {
   const raw = identifier.trim();

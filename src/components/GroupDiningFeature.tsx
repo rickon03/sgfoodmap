@@ -134,7 +134,7 @@ export function GroupDiningFeature({
     if (lower.includes("team_not_found")) return "该拼桌已不存在";
     if (lower.includes("not_authenticated")) return "请先登录";
     if (lower.includes("function") && lower.includes("does not exist"))
-      return "请先在 Supabase 执行 supabase_team_members.sql";
+      return "请先在 Supabase 执行 supabase/05_team_members.sql";
     return msg;
   };
 

@@ -120,7 +120,7 @@ export function LoginModal({
       if (!resolved.ok) {
         if (resolved.kind === "rpc_unavailable") {
           setError(
-            "使用校园昵称登录需要先在 Supabase 执行项目里的 supabase_resolve_login.sql。你也可以直接用邮箱登录。"
+            "使用校园昵称登录需要先在 Supabase 执行项目里的 supabase/02_profiles_username_unique.sql。你也可以直接用邮箱登录。"
           );
         } else {
           setError("未找到该校园昵称对应的账号，请检查拼写或改用邮箱登录。");
@@ -180,7 +180,7 @@ export function LoginModal({
           return;
         }
         if (!emailCheck.ok && emailCheck.kind === "rpc_unavailable") {
-          // 未执行 supabase_is_email_available.sql 时，交给 signUp 报错区分
+          // 未执行 supabase/03_is_email_available.sql 时，交给 signUp 报错区分
         }
 
         const nameCheck = await checkUsernameAvailable(nick);
@@ -190,7 +190,7 @@ export function LoginModal({
         }
         if (!nameCheck.ok && nameCheck.kind === "rpc_unavailable") {
           setError(
-            "无法校验昵称是否占用：请先在 Supabase 执行 supabase_profiles_username_unique.sql，或稍后再试。"
+            "无法校验昵称是否占用：请先在 Supabase 执行 supabase/02_profiles_username_unique.sql，或稍后再试。"
           );
           return;
         }
@@ -239,7 +239,7 @@ export function LoginModal({
       if (!resolved.ok) {
         if (resolved.kind === "rpc_unavailable") {
           setError(
-            "使用昵称找回密码需要先在 Supabase 执行 supabase_resolve_login.sql，或改用注册邮箱。"
+            "使用昵称找回密码需要先在 Supabase 执行 supabase/02_profiles_username_unique.sql，或改用注册邮箱。"
           );
         } else {
           setError("未找到该校园昵称对应的账号，请改用注册邮箱或检查拼写。");

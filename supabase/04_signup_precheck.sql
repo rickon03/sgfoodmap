@@ -1,5 +1,6 @@
+-- supabase/04_signup_precheck.sql
 -- 注册前：邮箱 + 昵称一次 RPC 完成（减少请求次数，降低触发 Supabase 频率限制的概率）
--- 依赖：已执行 supabase_is_email_available.sql 与 supabase_profiles_username_unique.sql 中的两个函数
+-- 依赖：已执行 02_profiles_username_unique.sql 与 03_is_email_available.sql 中的两个函数
 -- 在 Supabase → SQL Editor 执行
 
 create or replace function public.precheck_signup_registration(p_email text, p_username text)
