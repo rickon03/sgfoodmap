@@ -55,7 +55,9 @@ flowchart LR
 | 浏览器 → Supabase | 请求携带公开客户端 key；匿名与登录权限必须由 RLS 和 RPC 校验 |
 | 浏览器 → `localStorage` | 优惠券记录没有服务端隔离，同一浏览器中的账号可能共享本地数据 |
 | 浏览器 → 高德地图 | 会离开本站；当前传入的是模拟坐标 |
-| GitHub → Vercel | 推送 `main` 会触发生产部署；环境变量由 Vercel 管理 |
+| GitHub → Vercel | 推送 `main` 会触发完整版本部署；环境变量由 Vercel 管理 |
+| GitHub → GitHub Pages | 推送 `main` 会触发备用站部署；构建参数由 GitHub Actions Secrets 提供 |
+| 浏览器 → 内置 Demo 数据 | Supabase 连接失败、超时、空结果或数据异常时，使用同一批 16 家演示餐厅 |
 
 ## 已知风险与假设
 

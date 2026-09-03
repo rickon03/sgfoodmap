@@ -2,9 +2,10 @@
 
 面向新加坡高校学生的校园餐饮发现 Demo。用户可以在一个移动端优先的页面中完成餐厅搜索、筛选、比较、随机决策、查看详情、评价和拼桌。
 
-- 在线体验：[https://sgfoodmap.vercel.app/](https://sgfoodmap.vercel.app/)
+- GitHub Pages 备用站：[https://rickon03.github.io/sgfoodmap/](https://rickon03.github.io/sgfoodmap/)
+- Vercel 完整版：[https://sgfoodmap.vercel.app/](https://sgfoodmap.vercel.app/)
 - 项目文档：[架构与交接说明](documentation/architecture.md)
-- 技术栈：React 19、TypeScript、Vite、Tailwind CSS、Supabase、Vercel
+- 技术栈：React 19、TypeScript、Vite、Tailwind CSS、Supabase、GitHub Pages、Vercel
 
 > **项目说明**
 >
@@ -50,7 +51,7 @@
 
 | 功能 | 数据来源与状态 |
 | --- | --- |
-| 餐厅列表 | 前端从 Supabase `restaurants` 表读取；仓库提供 16 条演示种子数据 |
+| 餐厅列表 | 优先读取 Supabase；连接失败或超时后自动展示内置的 16 家 Demo 数据 |
 | 价格、评分、距离、菜单 | 演示数据，不是实时商家数据 |
 | 地图图钉与导航坐标 | 根据餐厅 ID 稳定生成的模拟坐标，不代表真实店铺位置 |
 | 注册与登录 | Supabase Auth，是真实可用的账号流程 |
@@ -67,7 +68,9 @@ flowchart LR
   A --> S[Supabase Auth]
   A --> D[Supabase PostgreSQL / RPC / RLS]
   V[Vercel] --> A
+  P[GitHub Pages 备用站] --> A
   G[GitHub main] --> V
+  G --> P
 ```
 
 | 层级 | 方案 |
@@ -76,7 +79,7 @@ flowchart LR
 | 构建 | Vite 6 |
 | 登录 | Supabase Auth |
 | 数据 | Supabase PostgreSQL、RPC、Row Level Security |
-| 部署 | GitHub + Vercel 自动部署 |
+| 部署 | GitHub Pages 备用站 + Vercel 完整版，均由 `main` 自动发布 |
 
 ## 本地运行
 
@@ -145,6 +148,7 @@ npm run dev
 
 ```text
 sgfoodmap/
+├─ .github/workflows/    # GitHub Pages 自动构建与发布
 ├─ documentation/        # 架构、权限、变量和测试交接文档
 ├─ public/               # 静态资源
 ├─ src/
@@ -173,7 +177,14 @@ Vercel 配置：
 - 输出目录：`dist`
 - 环境变量：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
 
-当前项目连接 GitHub `main` 分支，推送后由 Vercel 自动发布。
+GitHub Pages 配置：
+
+- 发布工作流：`.github/workflows/deploy-pages.yml`
+- 输出目录：`dist`
+- 仓库 Actions Secrets：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
+- 项目子路径：`/sgfoodmap/`
+
+当前项目连接 GitHub `main` 分支。推送后，Vercel 与 GitHub Pages 会分别自动发布；如果 Supabase 在当前网络不可达，页面最多等待 5 秒后使用内置 Demo 餐厅数据。
 
 ## 当前限制与下一步
 

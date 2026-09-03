@@ -23,11 +23,13 @@ import { PromoBanner } from "./components/PromoBanner";
 import { RestaurantCard } from "./components/RestaurantCard";
 import { SearchBar } from "./components/SearchBar";
 import { type PriceOrder, type SortMode } from "./components/SortBar";
+import { DEMO_RESTAURANT_ROWS } from "./data/demoRestaurants";
 import {
   type Coupon,
   type PriceFilterSelection,
   type Restaurant,
   type RestaurantRow,
+  isRestaurantRow,
   matchesGeoFilter,
   matchesPriceFilter,
   restaurantMatchesSearch,
@@ -37,6 +39,7 @@ import type { University } from "./data/universities";
 import { supabase } from "./lib/supabaseClient";
 type ClaimedCoupon = Coupon & { restaurantName: string };
 const CLAIMED_COUPONS_KEY = "ny-food-map-claimed-coupons";
+const RESTAURANT_LOAD_TIMEOUT_MS = 5_000;
 
 function useFilteredList(
   restaurants: Restaurant[],
@@ -114,6 +117,7 @@ export default function App() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [restaurantsLoading, setRestaurantsLoading] = useState(true);
   const [restaurantsError, setRestaurantsError] = useState<string | null>(null);
+  const [restaurantsNotice, setRestaurantsNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = window.localStorage.getItem(CLAIMED_COUPONS_KEY);
@@ -184,29 +188,45 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => controller.abort(),
+      RESTAURANT_LOAD_TIMEOUT_MS
+    );
     (async () => {
       try {
         setRestaurantsLoading(true);
         setRestaurantsError(null);
+        setRestaurantsNotice(null);
         const { data, error } = await supabase
           .from("restaurants")
           .select("*")
+          .abortSignal(controller.signal)
           .returns<RestaurantRow[]>();
         if (error) throw error;
+        if (!data || data.length === 0 || !data.every(isRestaurantRow)) {
+          throw new Error("餐厅数据暂不可用");
+        }
         const next = (data ?? []).map(rowToRestaurantUI);
         if (!alive) return;
         setRestaurants(next);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "获取餐厅列表失败";
         if (!alive) return;
-        setRestaurantsError(msg);
+        setRestaurants(DEMO_RESTAURANT_ROWS.map(rowToRestaurantUI));
+        setRestaurantsError(null);
+        setRestaurantsNotice(
+          "当前网络无法连接数据服务，已展示内置 Demo 数据；账号、评价和拼桌功能可能暂不可用。"
+        );
       } finally {
+        window.clearTimeout(timeoutId);
         if (!alive) return;
         setRestaurantsLoading(false);
       }
     })();
     return () => {
       alive = false;
+      window.clearTimeout(timeoutId);
+      controller.abort();
     };
   }, []);
 
@@ -498,6 +518,11 @@ export default function App() {
                 共 {sorted.length} 家
                 {searchActive ? " 符合筛选与搜索" : " 符合当前筛选"}
               </p>
+              {restaurantsNotice && (
+                <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
+                  {restaurantsNotice}
+                </p>
+              )}
 
               {restaurantsLoading ? (
                 <p className="mt-3 rounded-2xl bg-white p-6 text-center text-sm text-gray-500 ring-1 ring-gray-100 md:mt-6 md:p-8">

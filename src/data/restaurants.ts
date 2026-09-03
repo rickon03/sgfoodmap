@@ -55,6 +55,28 @@ export type Restaurant = RestaurantRow & {
   coupons: Coupon[];
 };
 
+/** 防止线上表结构漂移或脏数据破坏整个餐厅列表。 */
+export function isRestaurantRow(value: unknown): value is RestaurantRow {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Partial<RestaurantRow>;
+  return (
+    typeof row.id === "string" &&
+    typeof row.name === "string" &&
+    typeof row.university === "string" &&
+    typeof row.sub_location === "string" &&
+    typeof row.category === "string" &&
+    typeof row.price === "number" &&
+    Number.isFinite(row.price) &&
+    typeof row.rating === "number" &&
+    Number.isFinite(row.rating) &&
+    typeof row.distance === "string" &&
+    Array.isArray(row.tags) &&
+    row.tags.every((tag) => typeof tag === "string") &&
+    typeof row.signature_dishes === "string" &&
+    (row.image_url === null || typeof row.image_url === "string")
+  );
+}
+
 export function matchesGeoFilter(
   r: RestaurantRow,
   university: string,
